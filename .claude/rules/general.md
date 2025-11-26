@@ -1,6 +1,3 @@
----
-alwaysApply: true
----
 # Coding Standards and Best Practices
 
 ## Variable Naming and Code Quality
