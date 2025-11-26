@@ -60,8 +60,6 @@ Contains rules that apply to all Claude Code interactions:
 - `integration-testing.md` - Integration testing standards
 - `project-scope.md` - Project boundaries and focus areas
 
-Rules with `alwaysApply: true` in their frontmatter are automatically applied to every conversation.
-
 ### `/tickets` - Task Tracking
 
 Stores structured tickets for features, bugs, and enhancements. Each ticket includes:
@@ -98,7 +96,6 @@ Start by customizing the rules in `.claude/rules/` to match your project:
 
 ```bash
 # Edit existing rules or create new ones
-# Set alwaysApply: true for rules that should always be active
 ```
 
 ### 2. Create a Ticket
@@ -114,6 +111,7 @@ When you identify a new feature or bug, create a structured ticket:
 ```
 
 This creates a ticket in `.claude/tickets/` with:
+
 - Clear description and acceptance criteria
 - Technical requirements
 - Testing needs
@@ -132,6 +130,7 @@ Before implementation, create a detailed plan:
 ```
 
 The planning process:
+
 1. Reads the ticket completely
 2. Spawns specialized agents to research the codebase in parallel
 3. Identifies existing patterns and integration points
@@ -142,6 +141,7 @@ The planning process:
 ### 4. Review and Refine
 
 Review the generated plan:
+
 - Check that phases are properly scoped
 - Verify success criteria are specific and measurable
 - Ensure all technical details are accurate
@@ -161,6 +161,7 @@ Execute the plan step-by-step:
 ```
 
 During implementation:
+
 - Follow the phased approach in the plan
 - Run automated tests after each phase
 - Verify manual success criteria

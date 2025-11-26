@@ -1,7 +1,3 @@
----
-alwaysApply: true
----
-
 # Project Scope & Boundaries
 
 ## 🎯 **Project Vision**
@@ -41,24 +37,28 @@ Backend API → Hey API Client → React Frontend
 ### **Core Features (MVP)**
 
 1. **Project Dashboard**
+
    - Performance metrics overview
    - Project list with sortable columns
    - Score visualization with color coding
    - Progress indicators and trends
 
 2. **Data Display Components**
+
    - Interactive tables with Hey API integration
    - Responsive cards and layouts
    - Donut charts for metric visualization
    - Performance score indicators
 
 3. **Navigation & User Experience**
+
    - Route-based navigation between views
    - Project detail pages
    - Live data updates
    - Authentication flow
 
 4. **Analytics Features**
+
    - Performance score breakdowns
    - Historical progress tracking
    - Project comparison views
