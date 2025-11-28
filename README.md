@@ -119,20 +119,36 @@ This creates a ticket in `.claude/tickets/` with:
 
 ### 3. Research and Plan
 
-Before implementation, create a detailed plan:
+Before implementation, create a detailed plan. You have three options:
 
+**Option A: Plan from ticket only (includes research)**
 ```bash
-# Create a plan from a ticket
 /create-plan .claude/tickets/0001-dark-mode-toggle.md
+```
+Claude will ask if you want to conduct research in the same session or separately in a fresh context window.
 
-# Or start from scratch
+**Option B: Plan from ticket + research document (skips automatic research)**
+```bash
+/create-plan .claude/tickets/0001-dark-mode-toggle.md .claude/experiences/research/dark-mode-analysis.md
+```
+Claude relies on the provided research and skips automatic research spawning (unless critical gaps are found).
+
+**Option C: Plan from research document only (no ticket required)**
+```bash
+/create-plan .claude/experiences/research/dark-mode-analysis.md
+```
+Claude creates a plan based on the research document alone.
+
+**Option D: Start from scratch**
+```bash
 /create-plan
 ```
+Claude will guide you through providing the necessary information.
 
-The planning process:
+The planning process (varies based on option):
 
-1. Reads the ticket completely
-2. Spawns specialized agents to research the codebase in parallel
+1. Reads all provided files completely
+2. Conditionally spawns specialized agents to research the codebase in parallel (skipped if research document provided)
 3. Identifies existing patterns and integration points
 4. Asks clarifying questions about ambiguities
 5. Proposes implementation phases
@@ -197,14 +213,31 @@ Capture your work:
 
 ### 8. Research When Needed
 
-For ad-hoc investigation:
+**For creating research documents (before planning):**
+
+When you have a ticket and want to research thoroughly before creating a plan:
 
 ```bash
-# Research specific areas of the codebase
+# Conduct research and save findings
 /research-codebase "how authentication works"
+```
 
-# Analyze patterns
-/research-codebase "find all API endpoint patterns"
+Save the research output to `.claude/experiences/research/<description>.md`, then use it with `/create-plan`:
+
+```bash
+/create-plan .claude/tickets/0001-auth-feature.md .claude/experiences/research/auth-analysis.md
+```
+
+**For ad-hoc investigation:**
+
+When you need quick answers without creating a formal plan:
+
+```bash
+# Understand specific areas
+/research-codebase "how the API endpoints are structured"
+
+# Find patterns
+/research-codebase "find all database migration patterns"
 ```
 
 ## Key Benefits
