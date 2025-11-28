@@ -6,34 +6,80 @@ You are tasked with creating detailed implementation plans through an interactiv
 
 When this command is invoked:
 
-1. **Check if parameters were provided**:
-   - If a file path or ticket reference was provided as a parameter, skip the default message
+1. **Determine what parameters were provided**:
+
+   - Check if a ticket file was provided (typically in `.claude/tickets/`)
+   - Check if a research document was provided (typically in `.claude/experiences/research/`)
    - Immediately read any provided files FULLY
-   - Begin the research process
+   - Note: A ticket document is NOT the same as a research document
 
-2. **If no parameters provided**, respond with:
+2. **Handle based on what was provided**:
 
-```
-I'll help you create a detailed implementation plan. Let me start by understanding what we're building.
+   **Case 1: Only ticket provided (no research document)**
 
-Please provide:
-1. The task/ticket description (or reference to a ticket file)
-2. Any relevant context, constraints, or specific requirements
-3. Links to related research or previous implementations
+   Respond with:
 
-I'll analyze this information and work with you to create a comprehensive plan.
+   ```
+   I noticed you provided a ticket but no research document. Would you like me to:
 
-Tip: You can also invoke this command with a ticket file directly: `/create_plan .claude/tickets/<number>-<desc>.md`
-For deeper analysis, try: `/create_plan think deeply about .claude/tickets/<number>-<desc>.md`
-```
+   A) Conduct research as part of this plan creation session (may bloat context window)
+   B) Create a research document separately first in a fresh context window
 
-Then wait for the user's input.
+   Please respond with A or B
+   ```
+
+   - If user chooses A: Proceed with research in this session (continue to Step 1)
+   - If user chooses B: End current task and respond with:
+     ```
+     Great! Start a fresh context window and conduct the research separately using the /research command or by exploring the codebase first.
+     ```
+
+   **Case 2: Ticket + research document provided**
+
+   - Read both files FULLY
+   - Skip the research question entirely
+   - Proceed directly to Step 1 (Context Gathering & Initial Analysis)
+   - You can still:
+     - Conduct additional focused research if the research document lacks critical information
+     - Ask the user questions that require human judgment or clarification
+     - Spawn sub-tasks to verify or expand on specific details
+
+   **Case 3: Only research document provided (no ticket)**
+
+   - Read the research document FULLY
+   - Skip the research question
+   - Proceed directly to Step 1 (Context Gathering & Initial Analysis)
+   - Note: Ticket is NOT mandatory - you can create a plan based on research alone
+   - The plan name should be derived from the research document content
+
+   **Case 4: No parameters provided**
+
+   Respond with:
+
+   ```
+   I'll help you create a detailed implementation plan. Let me start by understanding what we're building.
+
+   Please provide:
+   1. The task/ticket description (or reference to a ticket file)
+   2. Any relevant context, constraints, or specific requirements
+   3. Links to related research or previous implementations
+
+   I'll analyze this information and work with you to create a comprehensive plan.
+
+   Tip: You can invoke this command with:
+   - Just a ticket: `/create-plan .claude/tickets/<number>-<desc>.md`
+   - Ticket + research: `/create-plan .claude/tickets/<number>-<desc>.md .claude/experiences/research/<description>.md`
+   - Just research: `/create-plan .claude/experiences/research/<description>.md`
+   ```
+
+   Then wait for the user's input.
 
 ## Process Steps
 
 ### Step 1: Context Gathering & Initial Analysis
 
 1. **Read all mentioned files immediately and FULLY**:
+
    - Ticket files (e.g., `.claude/tickets/0001-add-button.md`)
    - Research documents
    - Related implementation plans
@@ -42,23 +88,40 @@ Then wait for the user's input.
    - **CRITICAL**: DO NOT spawn sub-tasks before reading these files yourself in the main context
    - **NEVER** read files partially - if a file is mentioned, read it completely
 
-2. **Spawn initial research tasks to gather context**:
+2. **Conditionally spawn initial research tasks to gather context**:
+
+   **If NO research document was provided** (ticket only, or Case 1 with option A):
    Before asking the user any questions, use specialized agents to research in parallel:
+
    - Use the **codebase-locator** agent to find all files related to the ticket/task
    - Use the **codebase-analyzer** agent to understand how the current implementation works
    - If relevant, use the **experiences-locator** agent to find any existing experience documents about this feature
 
    These agents will:
+
    - Find relevant source files, configs, and tests
    - Trace data flow and key functions
    - Return detailed explanations with file:line references
 
-3. **Read all files identified by research tasks**:
+   **If a research document WAS provided** (Cases 2 or 3):
+
+   - SKIP the automatic research spawning described above
+   - Rely primarily on the research document that was provided
+   - Only spawn additional focused research tasks if:
+     - The research document has critical gaps or missing information
+     - You need to verify specific technical details
+     - The research document is unclear or contradictory
+   - Keep additional research minimal and targeted
+
+3. **Read all files identified by research tasks (if research was performed)**:
+
    - After research tasks complete, read ALL files they identified as relevant
    - Read them FULLY into the main context
    - This ensures you have complete understanding before proceeding
+   - Skip this step if no research tasks were spawned (research document provided)
 
 4. **Analyze and verify understanding**:
+
    - Cross-reference the ticket requirements with actual code
    - Identify any discrepancies or misunderstandings
    - Note assumptions that need verification
@@ -82,11 +145,16 @@ Then wait for the user's input.
 
    Only ask questions that you genuinely cannot answer through code investigation.
 
-### Step 2: Research & Discovery
+### Step 2: Research & Discovery (Conditional)
+
+**This step varies based on whether a research document was provided:**
+
+**If NO research document was provided** (ticket only):
 
 After getting initial clarifications:
 
 1. **If the user corrects any misunderstanding**:
+
    - DO NOT just accept the correction
    - Spawn new research tasks to verify the correct information
    - Read the specific files/directories they mention
@@ -95,19 +163,23 @@ After getting initial clarifications:
 2. **Create a research todo list** using TodoWrite to track exploration tasks
 
 3. **Spawn parallel sub-tasks for comprehensive research**:
+
    - Create multiple Task agents to research different aspects concurrently
    - Use the right agent for each type of research:
 
    **For deeper investigation:**
+
    - **codebase-locator** - To find more specific files (e.g., "find all files that handle [specific component]")
    - **codebase-analyzer** - To understand implementation details (e.g., "analyze how [system] works")
    - **codebase-pattern-finder** - To find similar features we can model after
 
    **For historical context:**
+
    - **experience-locator** - To find any research, plans, or decisions about this area
    - **experience-analyzer** - To extract key insights from the most relevant documents
 
    Each agent knows how to:
+
    - Find the right files and code patterns
    - Identify conventions and patterns to follow
    - Look for integration points and dependencies
@@ -117,6 +189,33 @@ After getting initial clarifications:
 4. **Wait for ALL sub-tasks to complete** before proceeding
 
 5. **Present findings and design options**:
+
+**If a research document WAS provided** (Cases 2 or 3):
+
+After getting initial clarifications:
+
+1. **If the user corrects any misunderstanding**:
+
+   - DO NOT just accept the correction
+   - Spawn focused research tasks ONLY if needed to verify the correction
+   - Read the specific files/directories they mention
+   - Only proceed once you've verified the facts yourself
+
+2. **Evaluate if additional research is needed**:
+
+   - Review the provided research document
+   - Identify any critical gaps or unclear areas
+   - Only spawn additional research if absolutely necessary
+
+3. **If additional research is needed** (gaps in research document):
+
+   - Create a minimal, focused research todo list using TodoWrite
+   - Spawn only the specific Task agents needed to fill gaps
+   - Keep research targeted and minimal
+
+4. **Wait for any sub-tasks to complete** before proceeding
+
+5. **Present findings based primarily on the research document**:
 
    ```
    Based on my research, here's what I found:
@@ -162,12 +261,14 @@ Once aligned on approach:
 
 After structure approval:
 
-1. **Write the plan** to `.claude/plans/<ticket-name>.md`
-   - Format: `plan.md` where:
-     - ticket-name is the ticket file name (create a brief name if no ticket is provided)
+1. **Write the plan** to `.claude/plans/<plan-name>.md`
+   - Naming convention:
+     - If ticket provided: Use the ticket number and name (e.g., `0001-add-button.md`)
+     - If only research document: Derive a descriptive name from the research content (e.g., `user-auth-implementation.md`)
    - Examples:
-     - `.claude/plans/0001-add-button.md`
-     - `.claude/plans/0002-pandacss-to-tailwind-migration.md`
+     - `.claude/plans/0001-add-button.md` (from ticket)
+     - `.claude/plans/0002-pandacss-to-tailwind-migration.md` (from ticket)
+     - `.claude/plans/oauth-integration.md` (from research document only)
 2. **Use this template structure**:
 
 ````markdown
@@ -266,14 +367,15 @@ After structure approval:
 
 ## References
 
-- Original ticket: `.claude/tickets/0001-add-button.md`
-- Related research: `.claude/experiences/react-component-implementation.md`
-- Similar implementation: `[file:line]`
+- Original ticket: `.claude/tickets/0001-add-button.md` (if applicable)
+- Related research: `.claude/experiences/research/react-component-implementation.md` (if provided)
+- Similar implementation: `[file:line]` (if found during research)
 ````
 
 ### Step 5: Sync and Review
 
 1. **Sync the experiences directory**:
+
    - This ensures the plan is properly indexed and available
 
 2. **Present the draft plan location**:
@@ -290,6 +392,7 @@ After structure approval:
    ```
 
 3. **Iterate based on feedback** - be ready to:
+
    - Add missing phases
    - Adjust technical approach
    - Clarify success criteria (both automated and manual)
@@ -300,6 +403,7 @@ After structure approval:
 ## Important Guidelines
 
 1. **Be Skeptical**:
+
    - Question vague requirements
    - Identify potential issues early
    - Ask "why" and "what about"
@@ -307,24 +411,28 @@ After structure approval:
    - If based off of an existing ticket, verify that the ticket is still relevant
 
 2. **Be Interactive**:
+
    - Don't write the full plan in one shot
    - Get buy-in at each major step
    - Allow course corrections
    - Work collaboratively
 
 3. **Be Thorough**:
+
    - Read all context files COMPLETELY before planning
    - Research actual code patterns using parallel sub-tasks
    - Include specific file paths and line numbers
    - Write measurable success criteria with clear automated vs manual distinction
 
 4. **Be Practical**:
+
    - Focus on incremental, testable changes
    - Consider migration and rollback
    - Think about edge cases
    - Include "what we're NOT doing"
 
 5. **Track Progress**:
+
    - Use TodoWrite to track planning tasks
    - Update todos as you complete research
    - Mark planning tasks complete when done
@@ -341,6 +449,7 @@ After structure approval:
 **Always separate success criteria into two categories:**
 
 1. **Automated Verification** (can be run by execution agents):
+
    - Commands that can be run: `pnpm test`, `pnpm lint`, `pnpm build` etc.
    - Specific files that should exist
    - Code compilation/type checking
